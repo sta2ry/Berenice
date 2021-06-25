@@ -1,6 +1,5 @@
 {
   "name": "babel-koa",
-  "port": 8081,
   "path": {
     "root": "${pwd}/dest",
     "client": "usr",
@@ -11,6 +10,11 @@
     "response": {
       "headers": {"origin": ["http://localhost:8081"]}
     }
+  },
+  "nacos": {
+    "serverList": ["127.0.0.1:8848"],
+    "serverAddr": "127.0.0.1:8848",
+    "namespace": "public"
   },
   "log4js": {
     "appenders": {

@@ -37,13 +37,6 @@
     ]
   },
   "dependencies": {
-    "@dfinity/rosetta-client": "^0.5.1",
-    "@edgeware/node-types": "^3.3.4",
-    "@polkadot/api": "^4.9.2",
-    "@polkadot/types": "^4.9.2",
-    "@polkadot/util": "^6.3.1",
-    "@polkadot/util-crypto": "^6.3.1",
-    "@substrate/txwrapper": "^5.0.0",
     "core-js": "^3.9.1",
     "crypto": "^1.0.1",
     "dateformat": "^4.5.1",
@@ -55,6 +48,7 @@
     "koa-onerror": "^4.1.0",
     "koa-router": "^10.0.0",
     "koa2-cors": "^2.0.6",
+    "nacos": "^2.1.1",
     "regenerator-runtime": "^0.13.7"
   },
   "devDependencies": {

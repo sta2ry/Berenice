@@ -21,75 +21,85 @@ import cors from 'koa2-cors';
 import context from './context/context';
 import moduleRouter from './routes/module';
 
-const origins = context.config.server.response.headers.origin;
+class Application {
 
-const app = new KOA();
+    app = new KOA();
+    _use = this.app.use;
+    logger = null;
 
-const _use = app.use;
+    async init() {
+        this.app.use = (x) => this._use.call(this.app, convert(x));
+        await context.bootstrap();
 
-const logger = log4js.getLogger(context.config.name);
+        this.logger = log4js.getLogger(context.config.name);
 
-app.use = (x) => _use.call(app, convert(x));
-// middlewares
-app.use(log4js.koaLogger(log4js.getLogger('http'), { level: 'auto' }));
-app.use(body());
-app.use(json());
+        // middlewares
+        this.app.use(log4js.koaLogger(log4js.getLogger('http'), { level: 'auto' }));
+        this.app.use(body());
+        this.app.use(json());
 
-// request perform log
-app.use(async (ctx, next) => {
-    const start = new Date();
-    await next();
-    const ms = new Date() - start;
-    logger.info(`- Perform Log: ${ctx.method} ${ctx.url} - ${ms}ms`);
-});
+        // request perform log
+        this.app.use(async (ctx, next) => {
+            const start = new Date();
+            await next();
+            const ms = new Date() - start;
+            this.logger.info(`- Perform Log: ${ctx.method} ${ctx.url} - ${ms}ms`);
+        });
 
-app.use(cors({origin: function (ctx) {
-        const index = origins.indexOf(ctx.request.headers.origin)
-        if ( index !== -1) {
-            return origins[index]
-        }
-    }}));
+        const origins = context.config.server.response.headers.origin;
+        this.app.use(cors({origin: function (ctx) {
+            const index = origins.indexOf(ctx.request.headers.origin);
+            if ( index !== -1) {
+                return origins[index]
+            }
+        }}));
+        // response router
+        this.app.use(moduleRouter.routes()).use(moduleRouter.allowedMethods());
+        // 404
+        this.app.use(async (ctx) => {
+            ctx.status = 404;
+            this.logger.warn('cannot find resource %s', ctx.request.originalUrl)
+        });
 
-// response router
-app.use(moduleRouter.routes()).use(moduleRouter.allowedMethods());
-// 404
-app.use(async (ctx) => {
-    ctx.status = 404;
-    logger.warn('cannot find resource %s', ctx.request.originalUrl)
-});
-
-// error logger
-app.on('error', async (err, ctx) => {
-    logger.error('error occured:', err);
-});
-
-// context.listen(process.env.PORT || 5000);
-const port = parseInt(context.config.port || process.env.PORT || '5000');
-
-const server = http.createServer(app.callback());
-
-server.listen(port);
-
-server.on('error', (error) => {
-    if (error.syscall !== 'listen') {
-        throw error;
+        // error logger
+        this.app.on('error', async (err, ctx) => {
+            this.logger.error('error occured:', err);
+        });
+        return this;
     }
-    // handle specific listen errors with friendly messages
-    switch (error.code) {
-        case 'EACCES':
-            logger.error(port + ' requires elevated privileges');
-            process.exit(1);
-            break;
-        case 'EADDRINUSE':
-            logger.error(port + ' is already in use');
-            process.exit(1);
-            break;
-        default:
-            throw error;
-    }
-});
-server.on('listening', () => {
-    logger.info('Listening on port: %d', port);
-});
 
-export default app;
+    async start() {
+        // context.listen(process.env.PORT || 5000);
+        const port = parseInt(context.config.port || process.env.PORT || '5000');
+
+        const server = http.createServer(this.app.callback());
+
+        server.listen(port);
+
+        server.on('error', (error) => {
+            if (error.syscall !== 'listen') {
+                throw error;
+            }
+            // handle specific listen errors with friendly messages
+            switch (error.code) {
+                case 'EACCES':
+                    logger.error(port + ' requires elevated privileges');
+                    process.exit(1);
+                    break;
+                case 'EADDRINUSE':
+                    logger.error(port + ' is already in use');
+                    process.exit(1);
+                    break;
+                default:
+                    throw error;
+            }
+        });
+        server.on('listening', () => {
+            this.logger.info('Listening on port: %d', port);
+        });
+        return this;
+    }
+}
+
+export default new Application().init().then(a=>a.start())
+    .catch(e=>console.error(e))

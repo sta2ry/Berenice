@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -16,18 +15,20 @@
 
 import path from 'path';
 import log4js from 'koa-log4';
+import {NacosConfigClient, NacosNamingClient} from "nacos";
 
 import config from '../../config/config.json';
-import * as fs from "fs";
+
 
 log4js.configure(config.log4js, {cwd: config.log4js.cwd});
+const logger = log4js.getLogger('babel-koa');
+
 
 const refactorConfig = (cfg) => {
     let resultConfig = cfg;
-    if (!cfg.path.root) {
-        resultConfig.path.root = path.join(__dirname, '../../..');
-    }
-
+    resultConfig.path.root = cfg.path.root ?
+        cfg.path.root.replaceAll("${pwd}", __dirname + "/..") :
+        path.join(__dirname, '../../..');
     if (process.platform === 'win32') {
         if (resultConfig.path.client.indexOf(':\\') !== 1) {
             resultConfig.path.client = path.join(resultConfig.path.root, resultConfig.path.client);
@@ -53,41 +54,42 @@ const refactorConfig = (cfg) => {
     return resultConfig;
 };
 
-const load_keys = (dir, keystore) => {
-    if(!keystore) {
-        keystore = {}
-    }
-    fs.readdirSync(dir).forEach(function (file) {
-        if(file.endsWith(".json")) {
-            const entries = require(path.join(dir,  file.replace(/\.json$/, "")));
-            entries.forEach(entry=>{
-                const address = entry.address;
-                delete entry.address;
-                keystore[address] = entry;
-            });
-            return;
-        }
-        if(fs.lstatSync(path.join(dir,file)).isDirectory()) {
-            load_keys(path.join(dir, file), keystore);
-        }
-    });
-    return keystore;
-}
-
 class Context {
+    container = {};
+    config = null;
 
-    constructor (cfg) {
+    constructor(cfg) {
         this.config = refactorConfig(cfg);
-        cfg.path.root = cfg.path.root.replaceAll("${pwd}", __dirname + "/..")
-        this.container = {};
     }
 
-    register (name, module) {
+    register(name, module) {
         this.container[name] = module;
     }
 
-    module (name) {
+    module(name) {
         return this.container[name];
+    }
+
+    async bootstrap() {
+        if (this.config.nacos) {
+            this.config.nacos.logger = logger
+            const configClient = new NacosConfigClient(this.config.nacos);
+            const configContent = await configClient.getConfig(this.config.name + '.json', 'DEFAULT_GROUP')
+            this.config = Object.assign(this.config, JSON.parse(configContent))
+            configClient.subscribe({dataId: this.config.name + '.json', group: 'DEFAULT_GROUP'}, content => {
+                this.config = Object.assign(this.config, JSON.parse(content))
+            });
+
+            const namingClient = new NacosNamingClient(this.config.nacos);
+            await namingClient.ready();
+            this.config.endpoints.forEach(endpoint=>
+                namingClient.subscribe(endpoint.serviceName, hosts => {
+                    logger.info("%s: hosts updating.", endpoint.serviceName)
+                    //TODO Register more useful things
+                    this.register('endpoint.' + endpoint.serviceName, hosts)
+                }))
+            ;
+        }
     }
 }
 
