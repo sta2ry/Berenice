@@ -1,0 +1,51 @@
+{
+  "name": "babel-koa",
+  "port": 8081,
+  "path": {
+    "root": "${pwd}/dest",
+    "client": "usr",
+    "resources": "etc",
+    "server": "srv"
+  },
+  "server": {
+    "response": {
+      "headers": {"origin": ["http://localhost:8081"]}
+    }
+  },
+  "log4js": {
+    "appenders": {
+      "http": {
+        "type": "dateFile",
+        "filename": "log/babel-koa-http.log",
+        "pattern": "-yyyy-MM-dd",
+        "alwaysIncludePattern": false
+      },
+      "babel-koa": {
+        "type": "dateFile",
+        "filename": "log/babel-koa.log",
+        "pattern": "-yyyy-MM-dd",
+        "alwaysIncludePattern": false
+      }
+    },
+    "categories": {
+      "default": {
+        "appenders": [
+          "babel-koa"
+        ],
+        "level": "info"
+      },
+      "http": {
+        "appenders": [
+          "http"
+        ],
+        "level": "info"
+      },
+      "babel-koa": {
+        "appenders": [
+          "babel-koa"
+        ],
+        "level": "info"
+      }
+    }
+  }
+}

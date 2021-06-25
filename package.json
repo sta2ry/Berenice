@@ -1,0 +1,70 @@
+{
+  "name": "babel-koa",
+  "version": "1.0.0",
+  "description": "Web Template, code in ECMAScript 2017+, and run/compile/implement by babel functions/plugin/env  and base web component is Koa 2",
+  "main": "src/index.js",
+  "scripts": {
+    "clean": "rm -rf dest/*",
+    "test": "mocha -u bdd --compilers js:babel-core/register",
+    "compile": "babel src/ --out-dir dest/ --retain-lines --source-maps",
+    "dev": "babel-node src/app.js",
+    "build": "npm test && npm run clean && npm run compile",
+    "start": "babel-node --presets env"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/featx/babel-koa.git"
+  },
+  "keywords": [
+    "babel",
+    "koa"
+  ],
+  "author": "Excepts <ex7ept@featx.org>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/featx/babel-koa/issues"
+  },
+  "homepage": "https://github.com/featx/babel-koa#readme",
+  "babel": {
+    "presets": [
+      "@babel/preset-env"
+    ],
+    "plugins": [
+      "@babel/plugin-syntax-top-level-await",
+      "@babel/plugin-proposal-class-properties",
+      "@babel/plugin-transform-async-to-generator",
+      "@babel/plugin-proposal-async-generator-functions"
+    ]
+  },
+  "dependencies": {
+    "@dfinity/rosetta-client": "^0.5.1",
+    "@edgeware/node-types": "^3.3.4",
+    "@polkadot/api": "^4.9.2",
+    "@polkadot/types": "^4.9.2",
+    "@polkadot/util": "^6.3.1",
+    "@polkadot/util-crypto": "^6.3.1",
+    "@substrate/txwrapper": "^5.0.0",
+    "core-js": "^3.9.1",
+    "crypto": "^1.0.1",
+    "dateformat": "^4.5.1",
+    "koa": "^2.13.1",
+    "koa-body": "^4.2.0",
+    "koa-convert": "^1.2.0",
+    "koa-json": "^2.0.2",
+    "koa-log4": "^2.3.2",
+    "koa-onerror": "^4.1.0",
+    "koa-router": "^10.0.0",
+    "koa2-cors": "^2.0.6",
+    "regenerator-runtime": "^0.13.7"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.13.10",
+    "@babel/core": "^7.13.10",
+    "@babel/node": "^7.13.10",
+    "@babel/plugin-proposal-async-generator-functions": "^7.13.8",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/plugin-syntax-top-level-await": "^7.12.13",
+    "@babel/plugin-transform-async-to-generator": "^7.13.0",
+    "@babel/preset-env": "^7.13.10"
+  }
+}
